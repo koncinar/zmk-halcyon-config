@@ -108,7 +108,7 @@
       "identifier": "halcyon_encoder_left",
       "compatible": "alps,ec11",
       "label": "LEFT_HALCYON_ENCODER",
-      "enabled": false
+      "enabled": true
     },
     {
       "ref": "right_halcyon_encoder",
