@@ -1,0 +1,7 @@
+&vik_st7789v {
+    ram-param = [00 F8];
+};
+
+&vik_sleep {
+    /delete-node/ st7789v_pins;
+};
