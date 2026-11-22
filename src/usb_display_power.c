@@ -24,6 +24,8 @@ extern struct k_timer display_timer;
 extern const struct init_entry __init_POST_KERNEL_start[];
 extern const struct init_entry __init_APPLICATION_start[];
 
+__attribute__((weak)) void custom_status_screen_sync_counter(void) {}
+
 static const struct device *display = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
 static const struct device *display_led = DEVICE_DT_GET(DT_PARENT(DT_CHOSEN(zmk_display_led)));
 static const uint8_t display_led_idx = DT_NODE_CHILD_IDX(DT_CHOSEN(zmk_display_led));
@@ -50,6 +52,10 @@ static void apply_usb_display_power(struct k_work *work) {
                          (zmk_activity_get_state() != ZMK_ACTIVITY_SLEEP);
 
     if (state_initialized && (should_enable == display_enabled)) {
+        if (!should_enable) {
+            k_timer_stop(&display_timer);
+            led_off(display_led, display_led_idx);
+        }
         return;
     }
     state_initialized = true;
@@ -61,6 +67,7 @@ static void apply_usb_display_power(struct k_work *work) {
 #if IS_ENABLED(CONFIG_PM_DEVICE)
         pm_device_action_run(display, PM_DEVICE_ACTION_RESUME);
 #endif
+        custom_status_screen_sync_counter();
         lv_obj_t *scr = lv_scr_act();
         if (scr != NULL) {
             lv_obj_invalidate(scr);

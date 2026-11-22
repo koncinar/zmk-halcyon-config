@@ -135,16 +135,25 @@ static void trigger_star_blink(void) {
     lv_anim_start(&a);
 }
 
-static void keypress_ui_work_handler(struct k_work *work) {
-    ARG_UNUSED(work);
-
+void custom_status_screen_sync_counter(void) {
     if (key_count_label != NULL) {
         unsigned int count = (unsigned int)atomic_get(&total_key_presses);
         lv_label_set_text_fmt(key_count_label, "KEYS: %u", count);
     }
+}
+
+static void keypress_ui_work_handler(struct k_work *work) {
+    ARG_UNUSED(work);
+
+    if (!zmk_usb_is_powered()) {
+        atomic_set(&pending_star_blinks, 0);
+        return;
+    }
+
+    custom_status_screen_sync_counter();
 
     atomic_val_t blinks = atomic_set(&pending_star_blinks, 0);
-    if (zmk_usb_is_powered() && blinks > 0) {
+    if (blinks > 0) {
         if (blinks > 3) {
             blinks = 3;
         }
@@ -163,9 +172,9 @@ static int keypress_event_listener(const zmk_event_t *eh) {
     }
 
     atomic_inc(&total_key_presses);
-    atomic_inc(&pending_star_blinks);
 
-    if (zmk_display_is_initialized()) {
+    if (zmk_usb_is_powered() && zmk_display_is_initialized()) {
+        atomic_inc(&pending_star_blinks);
         k_work_submit_to_queue(zmk_display_work_q(), &keypress_ui_work);
     }
 
